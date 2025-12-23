@@ -5,27 +5,19 @@ provider "aws" {
     region = "eu-west-1"
 }
 
-data "http" "my_ip" {
-  url = "https://checkip.amazonaws.com/" #"https://api.ipify.org?format=json" "https://api.ipify.org"
-}
-
-locals {
-    my_ip_cidrblock = ["${chomp(data.http.my_ip.response_body)}/32"] #my_ip_cidrblock["${chomp(data.http.my_ip.response_body)}/32"] jsondecode(data.http.my_ip.response_body).ip
-}
-
-resource "aws_security_group" "tech515_ansible_target_node_sg" {
+resource "aws_security_group" "tech515_ansible_target_node_app_sg" {
     # ... other configuration ...
-    name = "tech515-lucy-tf-ansible-target-node-2-allow-port-22-80-3000"
-    description = "Allow SSH port 22, HTTP port 80, app port 3000"
+    name = "tech515-lucy-new-target-node-app-allow-port-22-80-3000"
+    description = "Allow SSH port 22, HTTP port 80, app port 3000 from anywhere"
 
 
     # Allow port 22 my IP
     ingress {
-        description = "SSH from my IP"
+        description = "SSH from anywhere"
         from_port   = 22
         to_port     = 22
         protocol    = "tcp"
-        cidr_blocks = local.my_ip_cidrblock # ["${chomp(data.http.my_ip.response_body)}/32"]
+        cidr_blocks = ["0.0.0.0/0"]
     }
 
 
@@ -58,7 +50,7 @@ resource "aws_security_group" "tech515_ansible_target_node_sg" {
 
     # name the service
     tags = {
-        Name = "tech515-lucy-tf-ansible-target-node-2-allow-port-22-80-3000" # what you want it to be called when it's actually made
+        Name = "tech515-lucy-new-target-node-app-allow-port-22-80-3000" # what you want it to be called when it's actually made
     }
 }
 
@@ -74,7 +66,7 @@ resource "aws_instance" "tech515_ansible_target_node_instance" {
     associate_public_ip_address = true
 
     # Attach the security group to your EC2 instance:
-    vpc_security_group_ids = [aws_security_group.tech515_ansible_target_node_sg.id]   
+    vpc_security_group_ids = [aws_security_group.tech515_ansible_target_node_app_sg.id]   
 
     # Add public key we made already
     key_name = "tech515-lucy-aws"
@@ -83,6 +75,6 @@ resource "aws_instance" "tech515_ansible_target_node_instance" {
     
     # name the service
     tags = {
-        Name = "tech515-lucy-ubuntu-2204-ansible-target-node-app-2" # what you want it to be called when it's actually made
+        Name = "tech515-lucy-new-node-app"
     }
 }

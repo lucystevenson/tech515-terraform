@@ -1,14 +1,4 @@
 
-#Name: techxxx-yourname-ubuntu-2204-ansible-target-node-db
-#Size: t3.micro as usual
-#Security group: Allow SSH, Mongo DB (the usual for the DB)
-#VPC + subnets: Default ones
-#Key pair: Use the one you usually use for your AWS instances (and the same one as you used on the controller)
-#Image: Ubuntu Server 22.04 LTS (free tier eligible), NOT your custom DB AMI
-#User data: Leave it blank - don't run any scripts or user data on it
-#Public IP address: yes
-
-
 # cloud provider is AWS
  
 provider "aws" {
@@ -16,28 +6,36 @@ provider "aws" {
     region = "eu-west-1"
 }
 
+data "aws_security_group" "tech515_controller_sg" {
+  name = "tech515-lucy-tf-controller-allow-port-22"
+}
+ 
+data "aws_security_group" "tech515_ansible_target_node_app_sg" {
+  name = "tech515-lucy-new-target-node-app-allow-port-22-80-3000"
+}
+
 resource "aws_security_group" "tech515_ansible_NEW_target_node_db_sg" {
     # ... other configuration ...
     name = "tech515-lucy-tf-ansible-NEW-target-node-allow-port-22-27017"
-    description = "Allow SSH port 22, mongodb port 27017"
+    description = "Allow SSH from controller and MongoDB from app"
 
 
     # Allow port 22 from all
     ingress {
-        description = "SSH from anywhere"
+        description = "SSH from controller sg"
         from_port   = 22
         to_port     = 22
         protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
+        security_groups = [data.aws_security_group.tech515_controller_sg.id]
     }
 
     # Allow port 27017
     ingress {
-        description = "app port 3000 from anywhere"
+        description = "Port 27017 from target_node_app_sg"
         from_port   = 27017
         to_port     = 27017
         protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
+        security_groups = [data.aws_security_group.tech515_ansible_target_node_app_sg.id]
     }
 
     # Allow all outbound traffic
@@ -51,7 +49,7 @@ resource "aws_security_group" "tech515_ansible_NEW_target_node_db_sg" {
 
     # name the service
     tags = {
-        Name = "tech515-lucy-tf-ansible-NEW-target-node-allow-port-22-27017" # what you want it to be called when it's actually made
+        Name = "tech515-lucy-new-target-node-db-allow-port-22-27017" # what you want it to be called when it's actually made
     }
 }
 
@@ -76,6 +74,6 @@ resource "aws_instance" "tech515_ansible_NEW_target_node_db_instance" {
     
     # name the service
     tags = {
-        Name = "tech515-lucy-ubuntu-2204-ansible-NEW-target-node-DB" # what you want it to be called when it's actually made
+        Name = "tech515-lucy-new-node-db" # what you want it to be called when it's actually made
     }
 }
